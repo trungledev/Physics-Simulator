@@ -12,12 +12,14 @@ is_initialized = pygame.get_init()
 # printing the result
 print('Is pygame modules initialized:',
       is_initialized)
+
 WIDTH, HEIGHT = 800,600
 FPS = 60
 BLUE = (0, 0, 255)
 RED = (255,0,0)
-
+WHITE = (255,255,255)
 GRAVITY = 9.8
+GROUND_Y = HEIGHT - 50
 
 # Initializing surface
 surface = pygame.display.set_mode((WIDTH,HEIGHT))
@@ -25,9 +27,10 @@ clock = pygame.time.Clock()
 
 # Property of circle
 radius = 20
-pos_x = WIDTH / 2
+pos_x = WIDTH / 3
 pos_y = 100
-m = 0.5 # kg
+pos = Vector2(pos_x,pos_y)
+mass = 0.5 # kg
 h = (600 - pos_y) /1000
 
 font = pygame.font.SysFont("Arial" , 18 , bold = True)
@@ -41,8 +44,7 @@ def fps_counter():
     surface.blit(fps_t,(0,0))
 
 def force_counter(pos, v):
-    pos_x, pos_y = pos
-    v = v * 100 # scale
+    pos_x, pos_y = pos.x, pos.y
     force_x = pos_x + v.x
     force_y = pos_y + v.y
     pygame.draw.line(surface, BLUE,(pos_x,pos_y),(force_x,force_y),2)
@@ -50,24 +52,22 @@ def force_counter(pos, v):
 def acceleration(f,m):
     return f / m
 
-p = Vector2(0,m * GRAVITY)
-f =  Vector2(10,0)
+p = Vector2(0,GRAVITY)
+f =  Vector2(0,0)
 g = 9.8
 k = 1
-v0 = Vector2(0,0)
+restitution = 0.9   # hệ số đàn hồi (nảy)
+
+velocity = Vector2(0,0)
+invMass = 1/mass
+PIXELS_PER_METER = 100
 isCollided = False
-e = 0.9 # Hệ số đàn hồi với đất
-delta_t = 0.01
-# phản lực sau va chạm  
-def get_reaction_free_fall(h, m):
-    f = Vector2(0,- (1-e)*m*math.sqrt(2*g*h)) / delta_t
-    return f
 
 running = True
 while running:
-    clock.tick(FPS)
-    fps_counter()
+    dt = clock.tick(FPS) / 1000 
     pygame.display.update()
+    fps_counter()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:  
             running = False
@@ -75,26 +75,24 @@ while running:
     keys = pygame.key.get_pressed()
     if keys[pygame.K_ESCAPE]:  # Quit
         running = False
-    if pos_y - HEIGHT + radius > 1e-3:
-        isCollided = True
-    if isCollided:
-        f_react = get_reaction_free_fall(h,m)  
-        h *= e**2
-        f = f_react
-        isCollided = False
-        
-    dt = clock.tick(60) / 1000 
-    if h > 1e-3:
-        f += p * dt
-    else:
-        f = Vector2()
-    a = acceleration(f,m)
-    pos_y += 0.5 * a.y * dt ** 2 * 1000
     
-    v = v0 + a * dt
+    f = p 
+    velocity += f * dt
+    pos += velocity * dt * PIXELS_PER_METER
+    
+    # ---------- COLLISION WITH GROUND ----------
+    if pos.y + radius > GROUND_Y:
+        pos.y = GROUND_Y - radius
+        velocity.y *= -restitution   # bật lên
+
+        # chống rung
+        if abs(velocity.y) < 1:
+            velocity.y = 0
+    
     surface.fill((30, 30, 30))
+    pygame.draw.line(surface,WHITE,(0, GROUND_Y),(WIDTH, GROUND_Y))
+    pygame.draw.circle(surface, RED, (pos.x, pos.y), radius)
+    force_counter(pos, velocity)
     
-    force_counter((pos_x,pos_y), v)
-    pygame.draw.circle(surface, RED,(pos_x,pos_y), radius,1)
 pygame.display.flip()
 
