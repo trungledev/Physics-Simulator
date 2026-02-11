@@ -18,6 +18,7 @@ FPS = 60
 BLUE = (0, 0, 255)
 RED = (255,0,0)
 WHITE = (255,255,255)
+YELLOW = (255, 255, 0)
 GRAVITY = 9.8
 GROUND_Y = HEIGHT - 50
 
@@ -44,10 +45,11 @@ def fps_counter():
     surface.blit(fps_t,(0,0))
 
 def force_counter(pos, v):
+    v_scale = v * 5 # Scale 
     pos_x, pos_y = pos.x, pos.y
-    force_x = pos_x + v.x
-    force_y = pos_y + v.y
-    pygame.draw.line(surface, BLUE,(pos_x,pos_y),(force_x,force_y),2)
+    force_x = pos_x + v_scale.x
+    force_y = pos_y + v_scale.y
+    pygame.draw.line(surface, YELLOW,(pos_x,pos_y),(force_x,force_y),2)
 
 def acceleration(f,m):
     return f / m
@@ -89,7 +91,7 @@ while running:
         if abs(velocity.y) < 1:
             velocity.y = 0
     
-    surface.fill((30, 30, 30))
+    surface.fill((30, 30, 30)) 
     pygame.draw.line(surface,WHITE,(0, GROUND_Y),(WIDTH, GROUND_Y))
     pygame.draw.circle(surface, RED, (pos.x, pos.y), radius)
     force_counter(pos, velocity)
